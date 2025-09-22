@@ -51,38 +51,38 @@ has personal loan -> 1
  cellular -> 0
 telephone -> 1
 
-"day" : date
+"day" : date | last contact day of the month
 represent as 
 
-"month" : categorical
+"month" : categorical | Last month contacted
   january -> 000000000001
  february -> 000000000010
-    march -> 000000000100000000000100
-	april -> 000000001000000000001000
-	  may -> 000000010000000000010000
-	 june -> 000000100000000000100000
-	 july -> 000001000000000001000000
-   august -> 000010000000000010000000
-september -> 000100000000000100000000
-  october -> 001000000000001000000000
- november -> 010000000000010000000000
- december -> 100000000000100000000000
+    march -> 000000000100
+	 april -> 000000001000
+	   may -> 000000010000
+	  june -> 000000100000
+	  july -> 000001000000
+   august -> 000010000000
+september -> 000100000000
+  october -> 001000000000
+ november -> 010000000000
+ december -> 100000000000
 
-"duration" : integer
+"duration" : integer | Length of last contact(call or meeting) in seconds
 duration -> number in seconds
 
-"campaign" : integer
+"campaign" : integer | amount of times client was contacted during this  marketing campaign
 campaign -> number
 
-"pdays" : integer
+"pdays" : integer | days since client was last contacted from
 pdays -> integer
 
-"previous" : integer
+"previous" : integer | amount of times client was contacted before this marketing campaign
 previous -> number
 
 "poutcome" : categorical | Did they subscribe to a term deposit during the previous marketing campaing
-	 failure -> 00101
-nonexistent -> 0100
+	 failure -> 001
+nonexistent -> 010
 	 success -> 100
 
 
