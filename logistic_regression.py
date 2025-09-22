@@ -1,7 +1,7 @@
 # Authors: Matthew Ayala, Maanav Contractor, Alvin Liu, Luke Sims
 #
 # Model: Logistic Regression
-# Dataset: predict if the client will subscribe to a term deposit
+# Dataset: Predict if the client will subscribe to a term deposit
 # Training Dataset File: '/data/bank.csv'
 # Testing Dataset File: '/data/bank-full.csv'
 #
@@ -18,10 +18,11 @@ import matplotlib as mpl
 import scipy
 import autograd
 
-df = pd.read_csv("/data/bank.csv")
+df = pd.read_csv("data/bank.csv", sep = ";")
 features = ['age', 'job', 'marital', 'education', 'default', 'balance', 'housing', 'loan', 'contact', 'day', 
             'month', 'campaign', 'pdays', 'previous', 'poutcome']
 
 print(df.head())
 print(df.info())
+print(df.columns)
 print(df['y'].value_counts())

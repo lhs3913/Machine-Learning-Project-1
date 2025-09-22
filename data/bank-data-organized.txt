@@ -1,0 +1,92 @@
+INPUTS:
+"age" : integer
+age -> number
+
+"job" : categorical
+        admin -> 000000000001
+  blue-collar -> 000000000010
+ entrepreneur -> 000000000100
+    housemaid -> 000000001000
+   management -> 000000010000
+      retired -> 000000100000
+self-employed -> 000001000000
+     services -> 000010000000
+      student -> 000100000000
+   technician -> 001000000000
+   unemployed -> 010000000000
+      unknown -> 100000000000
+
+"marital" : categorical
+divorced -> 0001
+ married -> 0010
+  single -> 0100
+ unknown -> 1000
+
+"education" : categorical
+           basic.4y -> 00000001
+           basic.6y -> 00000010
+           basic.9y -> 00000100
+        high.school -> 00001000
+         illiterate -> 00010000
+professional.course -> 00100000
+  university.degree -> 01000000
+            unknown -> 10000000
+
+"default" : binary
+not defaulted -> 0
+has defaulted -> 1
+
+"balance" : integer
+yearly balance -> number
+
+"housing" : binary
+ no housing loan -> 0
+has housing load -> 1
+
+"loan" : binary
+ no personal loan -> 0
+has personal loan -> 1
+
+"contact" : categorical
+ cellular -> 0
+telephone -> 1
+
+"day" : date
+represent as 
+
+"month" : categorical
+  january -> 000000000001
+ february -> 000000000010
+    march -> 000000000100000000000100
+	april -> 000000001000000000001000
+	  may -> 000000010000000000010000
+	 june -> 000000100000000000100000
+	 july -> 000001000000000001000000
+   august -> 000010000000000010000000
+september -> 000100000000000100000000
+  october -> 001000000000001000000000
+ november -> 010000000000010000000000
+ december -> 100000000000100000000000
+
+"duration" : integer
+duration -> number in seconds
+
+"campaign" : integer
+campaign -> number
+
+"pdays" : integer
+pdays -> integer
+
+"previous" : integer
+previous -> number
+
+"poutcome" : categorical | Did they subscribe to a term deposit during the previous marketing campaing
+	 failure -> 00101
+nonexistent -> 0100
+	 success -> 100
+
+
+OUTPUT:
+"y" | Did they subscribe to a term deposit
+no = 0
+yes = 1
