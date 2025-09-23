@@ -18,7 +18,7 @@ import matplotlib as mpl
 import scipy
 import autograd
 
-df = pd.read_csv("data/bank.csv", sep = ";")
+df = pd.read_csv("data/training.csv", sep = ";")
 features = ['age', 'job', 'marital', 'education', 'default', 'balance', 'housing', 'loan', 'contact', 'day', 
             'month', 'campaign', 'pdays', 'previous', 'poutcome']
 
