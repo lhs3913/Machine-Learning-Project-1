@@ -106,7 +106,7 @@ def training_logreg(x, y, lrate, iterations, reg_strength):
 
     for i in range(iterations):
         # forwad pass
-        z = x @ W + b
+        z = np.dot(x, W) + b
         predicted_y = sigmoid(z)
 
         # gradient for weight(how much each weight should change)
@@ -140,6 +140,6 @@ def predict(x, W, b, threshold):
     Return:
         predicted y value for the feature array
     """
-    z = x @ W + b
+    z = np.dot(x, W) + b
     return (sigmoid(z) >= threshold).astype(int)
 
