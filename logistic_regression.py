@@ -275,12 +275,6 @@ def main():
         test1_df = test1_df.reindex(columns=training_df.columns, fill_value=0)
         test2_df = test2_df.reindex(columns=training_df.columns, fill_value=0)
 
-    # features = ['age', 'job', 'marital', 'education', 'default', 'balance', 'housing', 'loan', 'contact', 'day', 
-    #         'month', 'campaign', 'pdays', 'previous', 'poutcome']
-
-    # Converts the categorical columns into bianry columns thorugh one-hot encoding
-    # training_df = pd.get_dummies(training_df, columns = ["job", "marital", "education","contact", "day", "month", "poutcome"])
-
     # convert yes/no -> 1/0 for binary columns (do separately)
     binary_cols = ["default", "housing", "loan", "y"]
     for col in binary_cols:
@@ -290,17 +284,6 @@ def main():
             test1_df[col] = test1_df[col].map({"yes": 1, "no": 0})
         if col in test2_df.columns:
             test2_df[col] = test2_df[col].map({"yes": 1, "no": 0})
-
-
-    # # Converts the binary yes/no columns into 0/1
-    # binary_col = ["default", "housing", "loan", "y"]
-    # training_df[binary_col] = training_df[binary_col].map(lambda x : 1 if x == "yes" else 0)
-
-    # # Seperate the features into x and the labels into y
-    # x = training_df.drop("y", axis = 1).values
-    # y = training_df["y"].values
-    # # print(x[:5])
-    # # print(y[:5])
 
     # split features / labels
     x_train = training_df.drop("y", axis=1).values.astype(float)
@@ -320,8 +303,6 @@ def main():
     x_test1 = (x_test1 - feature_mean) / feature_std
     x_test2 = (x_test2 - feature_mean) / feature_std
 
-    # pause_for_user("Data preprocessed. Press Enter to train model...")
-
     # --------------------------------
     # 4. training
     # --------------------------------
@@ -329,8 +310,6 @@ def main():
     W_final, b_final, losses, history = training_logreg(
         x_train, y_train, lrate, iterations, reg_strength
         )
-
-    # pause_for_user("Training finished. Press Enter to see loss curve...")
 
     # --------------------------------
     # 5. plot
