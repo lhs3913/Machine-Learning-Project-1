@@ -14,29 +14,9 @@
 
 import numpy as np
 import pandas as pd
-import matplotlib as mpl
+import matplotlib.pyplot as plt
 import scipy
 import autograd
-
-training_df = pd.read_csv("data/training.csv", sep = ";")
-testing_df = pd.read_csv("data/test-1.csv", sep = ";")
-
-features = ['age', 'job', 'marital', 'education', 'default', 'balance', 'housing', 'loan', 'contact', 'day', 
-            'month', 'campaign', 'pdays', 'previous', 'poutcome']
-
-# Converts the categorical columns into bianry columns thorugh one-hot encoding
-training_df = pd.get_dummies(training_df, columns = ["job", "marital", "education","contact", "day", "month", "poutcome"])
-
-
-# Converts the binary yes/no columns into 0/1
-binary_col = ["default", "housing", "loan", "y"]
-training_df[binary_col] = training_df[binary_col].map(lambda x : 1 if x == "yes" else 0)
-
-# Seperate the features into x and the labels into y
-x = training_df.drop("y", axis = 1).values
-y = training_df["y"].values
-print(x[:5])
-print(y[:5])
 
 def sigmoid(z):
     """
@@ -98,11 +78,14 @@ def training_logreg(x, y, lrate, iterations, reg_strength):
         b(float): learned bias term
 
         losses(list): loss value at each iteration
+
+        history(list): history of weights and bias for plotting
     """
     m, n = x.shape
     W = np.zeros((n, 1)) # initialize weights array
     b = 0 # intialize bias
     losses = []
+    history = []
 
     for i in range(iterations):
         # forwad pass
@@ -110,7 +93,7 @@ def training_logreg(x, y, lrate, iterations, reg_strength):
         predicted_y = sigmoid(z)
 
         # gradient for weight(how much each weight should change)
-        gradient_weights = (1 / m) * (x.T @ (predicted_y - y)) + (reg_strength / m)
+        gradient_weights = (1 / m) * (x.T @ (predicted_y - y)) + (reg_strength / m) * W
 
         # gradient for bias
         gradient_bias = (1 / m) * np.sum(predicted_y - y)
@@ -121,8 +104,9 @@ def training_logreg(x, y, lrate, iterations, reg_strength):
 
         # track loss
         losses.append(compute_loss(y, predicted_y, W, reg_strength))
+        history.append((W.copy(), b))  # save weights/bias for plotting later
 
-    return W, b, losses
+    return W, b, losses, history
 
 def predict(x, W, b, threshold):
     """
@@ -143,3 +127,312 @@ def predict(x, W, b, threshold):
     z = np.dot(x, W) + b
     return (sigmoid(z) >= threshold).astype(int)
 
+def evaluate_model(y, predicted_y):
+    """
+    Compute evaluation metrics for classification.
+
+    Parameters:
+        y(array): actual labels (0 or 1)
+        predicted_y(array): predicted labels (0 or 1)
+
+    Returns:
+        metrics(dict): dictionary with human-readable metrics
+    """
+    y = y.ravel()
+    predicted_y = predicted_y.ravel()
+
+    true_positives = np.sum((predicted_y == 1) & (y == 1))
+    true_negatives = np.sum((predicted_y == 0) & (y == 0))
+    false_positives = np.sum((predicted_y == 1) & (y == 0))
+    false_negatives = np.sum((predicted_y == 0) & (y == 1))
+
+    accuracy = (true_positives + true_negatives) / len(y)
+    precision = true_positives / (true_positives + false_positives + 1e-9)
+    recall = true_positives / (true_positives + false_negatives + 1e-9)
+    f1_score = 2 * precision * recall / (precision + recall + 1e-9)
+
+    # Print results in a table format
+    print("\nEvaluation Report")
+    print("-" * 50)
+    print(f"{'Overall Accuracy':40}: {accuracy*100:6.2f}%")
+    print(f"{'Precision (predicted yes correct)':40}: {precision*100:6.2f}%")
+    print(f"{'Recall (actual yes found)':40}: {recall*100:6.2f}%")
+    print(f"{'F1 Score (balance of precision/recall)':40}: {f1_score*100:6.2f}%")
+    print("-" * 50)
+
+    return "done"
+
+
+def pause_for_user(message="Press Enter to continue..."):
+    """Pause the program until user presses Enter."""
+    input(f"\n{message}")
+
+def ask_user_input(prompt, default, cast_type=float):
+    """
+    Ask the user for input with a default value.
+    If the user presses Enter without typing, the default is returned.
+
+    Parameters:
+        prompt(str): description of the variable
+        default: default value
+        cast_type: type to cast input (float or int)
+
+    Returns:
+        user_value: value entered by user or default
+    """
+    user_input = input(f"{prompt} [default = {default}]: ")
+    if user_input.strip() == "":
+        return default
+    else:
+        return cast_type(user_input)
+    
+def smooth_curve(values, window=50):
+    """
+    Apply rolling average smoothing to a curve.
+
+    Parameters:
+        values(list): list of accuracy values
+        window(int): smoothing window size
+
+    Returns:
+        smoothed_values(array): smoothed curve
+    """
+    return pd.Series(values).rolling(window=window, min_periods=1).mean().values
+
+def main():
+    # --------------------------------
+    # 1. Ask for parameters
+    # --------------------------------
+
+    print("\nSet training parameters (press Enter to use default values):\n")
+
+    lrate = ask_user_input(
+        "Learning rate (controls step size for gradient descent)", 
+        default=0.01, cast_type=float
+    )
+    iterations = ask_user_input(
+        "Number of training iterations (how many times the model updates weights)", 
+        default=1000, cast_type=int
+    )
+    reg_strength = ask_user_input(
+        "Regularization strength (helps prevent overfitting by shrinking weights)", 
+        default=0.0, cast_type=float
+    )
+    threshold = ask_user_input(
+        "Prediction threshold (cutoff for deciding between class 0 and 1)", 
+        default=0.5, cast_type=float
+    )
+
+    print("\n Training will run with:")
+    print(f"  Learning rate     = {lrate}")
+    print(f"  Iterations        = {iterations}")
+    print(f"  Regularization    = {reg_strength}")
+    print(f"  Threshold         = {threshold}\n")
+
+    pause_for_user("Parameters set. Press Enter to choose features...")
+
+    # --------------------------------
+    # 2a. load data
+    # --------------------------------
+
+    training_df = pd.read_csv("data/training.csv", sep = ";")
+    test1_df = pd.read_csv("data/test-1.csv", sep=";")
+    test2_df = pd.read_csv("data/test-2.csv", sep=";")
+
+    # pause_for_user("Data loaded. Press Enter to preprocess...")
+
+    # --------------------------------
+    # 2b. Ask which features to use
+    # --------------------------------
+    all_features = [
+        "age", "job", "marital", "education", "default", "balance", 
+        "housing", "loan", "contact", "day", "month", "duration", 
+        "campaign", "pdays", "previous", "poutcome"
+    ]
+
+    print("\nAvailable features:")
+    for i, f in enumerate(all_features, start=1):
+        print(f"{i}. {f}")
+
+    feature_input = input("\nEnter the features to use as comma-separated list (leave blank to use all): ").strip()
+
+    if feature_input == "":
+        selected_features = all_features
+    else:
+        # Clean and validate user input
+        selected_features = [f.strip() for f in feature_input.split(",")]
+        invalid_features = [f for f in selected_features if f not in all_features]
+        if invalid_features:
+            print(f"Warning: The following features are invalid and will be ignored: {invalid_features}")
+            selected_features = [f for f in selected_features if f in all_features]
+
+    print(f"\nUsing features: {selected_features}\n")
+
+    training_df = training_df[selected_features + ["y"]]
+    test1_df = test1_df[selected_features + ["y"]]
+    test2_df = test2_df[selected_features + ["y"]]
+
+    pause_for_user("Features chosen. Press Enter to preprocess, train model, and show plots...")
+
+    # --------------------------------
+    # 3. preprocesses
+    # --------------------------------
+
+    # Identify categorical columns among selected features
+    categorical_cols = [col for col in ["job", "marital", "education", "contact", "day", "month", "poutcome"] if col in selected_features]
+
+    # Only one-hot encode if there are categorical columns selected
+    if categorical_cols:
+        training_df = pd.get_dummies(training_df, columns=categorical_cols)
+        test1_df = pd.get_dummies(test1_df, columns=categorical_cols)
+        test2_df = pd.get_dummies(test2_df, columns=categorical_cols)
+
+        # Align test sets to training columns
+        test1_df = test1_df.reindex(columns=training_df.columns, fill_value=0)
+        test2_df = test2_df.reindex(columns=training_df.columns, fill_value=0)
+
+    # features = ['age', 'job', 'marital', 'education', 'default', 'balance', 'housing', 'loan', 'contact', 'day', 
+    #         'month', 'campaign', 'pdays', 'previous', 'poutcome']
+
+    # Converts the categorical columns into bianry columns thorugh one-hot encoding
+    # training_df = pd.get_dummies(training_df, columns = ["job", "marital", "education","contact", "day", "month", "poutcome"])
+
+    # convert yes/no -> 1/0 for binary columns (do separately)
+    binary_cols = ["default", "housing", "loan", "y"]
+    for col in binary_cols:
+        if col in training_df.columns:
+            training_df[col] = training_df[col].map({"yes": 1, "no": 0})
+        if col in test1_df.columns:
+            test1_df[col] = test1_df[col].map({"yes": 1, "no": 0})
+        if col in test2_df.columns:
+            test2_df[col] = test2_df[col].map({"yes": 1, "no": 0})
+
+
+    # # Converts the binary yes/no columns into 0/1
+    # binary_col = ["default", "housing", "loan", "y"]
+    # training_df[binary_col] = training_df[binary_col].map(lambda x : 1 if x == "yes" else 0)
+
+    # # Seperate the features into x and the labels into y
+    # x = training_df.drop("y", axis = 1).values
+    # y = training_df["y"].values
+    # # print(x[:5])
+    # # print(y[:5])
+
+    # split features / labels
+    x_train = training_df.drop("y", axis=1).values.astype(float)
+    y_train = training_df["y"].values.reshape(-1, 1).astype(float)
+
+    x_test1 = test1_df.drop("y", axis=1).values.astype(float)
+    y_test1 = test1_df["y"].values.reshape(-1, 1).astype(float)
+
+    x_test2 = test2_df.drop("y", axis=1).values.astype(float)
+    y_test2 = test2_df["y"].values.reshape(-1, 1).astype(float)
+
+    # Standardize features (fit on train, apply to tests)
+    feature_mean = x_train.mean(axis=0)
+    feature_std = x_train.std(axis=0)
+    feature_std[feature_std == 0] = 1.0
+    x_train = (x_train - feature_mean) / feature_std
+    x_test1 = (x_test1 - feature_mean) / feature_std
+    x_test2 = (x_test2 - feature_mean) / feature_std
+
+    # pause_for_user("Data preprocessed. Press Enter to train model...")
+
+    # --------------------------------
+    # 4. training
+    # --------------------------------
+
+    W_final, b_final, losses, history = training_logreg(
+        x_train, y_train, lrate=lrate, iterations=iterations, reg_strength=reg_strength
+        )
+
+    # pause_for_user("Training finished. Press Enter to see loss curve...")
+
+    # --------------------------------
+    # 5. plot
+    # --------------------------------
+
+    # loss curve
+    plt.figure(figsize=(8,5))
+    plt.plot(range(len(losses)), losses, label="Training Loss", color="blue")
+    plt.xlabel("Iteration")
+    plt.ylabel("Loss")
+    plt.title("Loss Curve for Logistic Regression")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig("graphs/loss_curve.png", dpi=300)
+    print("\nLoss curve saved as 'loss_curve.png'.")
+    plt.show()
+
+    pause_for_user("Loss curve shown. Press Enter to plot accuracy curves...")
+
+    # accuracy curve
+    train_accuracies = []
+    test1_accuracies = []
+    test2_accuracies = []
+
+    for (W_iter, b_iter) in history:
+        # predictions at this iteration
+        y_train_pred_iter = (sigmoid(x_train @ W_iter + b_iter) >= threshold).astype(int)
+        y_test1_pred_iter = (sigmoid(x_test1 @ W_iter + b_iter) >= threshold).astype(int)
+        y_test2_pred_iter = (sigmoid(x_test2 @ W_iter + b_iter) >= threshold).astype(int)
+
+        train_accuracies.append(np.mean(y_train_pred_iter == y_train))
+        test1_accuracies.append(np.mean(y_test1_pred_iter == y_test1))
+        test2_accuracies.append(np.mean(y_test2_pred_iter == y_test2))
+
+    # smooth
+    train_smoothed = smooth_curve(train_accuracies, window=max(1, iterations//20))
+    test1_smoothed = smooth_curve(test1_accuracies, window=max(1, iterations//20))
+    test2_smoothed = smooth_curve(test2_accuracies, window=max(1, iterations//20))
+
+    plt.figure(figsize=(8,5))
+    plt.plot(range(len(losses)), train_smoothed, label="Training Accuracy", color="green")
+    plt.plot(range(len(losses)), test1_smoothed, label="Test Set 1 Accuracy", color="orange")
+    plt.plot(range(len(losses)), test2_smoothed, label="Test Set 2 Accuracy", color="red")
+    plt.xlabel("Iteration")
+    plt.ylabel("Accuracy")
+    plt.title("Accuracy Curve (Smoothed)")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig("graphs/accuracy_curve.png", dpi=300)
+    print("Accuracy curve saved as 'accuracy_curve.png'.")
+    plt.show()
+
+    pause_for_user("Accuracy curves shown. Press Enter to run final predictions and evaluations...")
+
+    # --------------------------------
+    # 6. predict
+    # --------------------------------
+
+    y_train_pred = predict(x_train, W_final, b_final, threshold)
+    y_test1_pred = predict(x_test1, W_final, b_final, threshold)
+    y_test2_pred = predict(x_test2, W_final, b_final, threshold)
+
+    pause_for_user("Predictions complete. Press Enter to evaluate...")
+
+
+    # --------------------------------
+    # 7. evaluate
+    # --------------------------------
+
+    print("\nTraining Performance:")
+    print(evaluate_model(y_train, y_train_pred))
+
+    pause_for_user("Press Enter to see Test Set 1 results...")
+
+    print("\nTest Set 1 Performance:")
+    print(evaluate_model(y_test1, y_test1_pred))
+
+    pause_for_user("Press Enter to see Test Set 2 results...")
+
+    print("\nTest Set 2 Performance:")
+    print(evaluate_model(y_test2, y_test2_pred))
+
+    pause_for_user("\nAll done! Press Enter to exit.")
+
+
+if __name__ == "__main__":
+    main()
