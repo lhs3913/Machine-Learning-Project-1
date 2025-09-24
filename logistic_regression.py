@@ -160,9 +160,6 @@ def evaluate_model(y, predicted_y):
     print(f"{'F1 Score (balance of precision/recall)':40}: {f1_score*100:6.2f}%")
     print("-" * 50)
 
-    return "done"
-
-
 def pause_for_user(message="Press Enter to continue..."):
     """Pause the program until user presses Enter."""
     input(f"\n{message}")
@@ -186,19 +183,6 @@ def ask_user_input(prompt, default, cast_type=float):
     else:
         return cast_type(user_input)
     
-def smooth_curve(values, window=50):
-    """
-    Apply rolling average smoothing to a curve.
-
-    Parameters:
-        values(list): list of accuracy values
-        window(int): smoothing window size
-
-    Returns:
-        smoothed_values(array): smoothed curve
-    """
-    return pd.Series(values).rolling(window=window, min_periods=1).mean().values
-
 def main():
     # --------------------------------
     # 1. Ask for parameters
@@ -220,7 +204,7 @@ def main():
     )
     threshold = ask_user_input(
         "Prediction threshold (cutoff for deciding between class 0 and 1)", 
-        default=0.5, cast_type=float
+        default=0.2, cast_type=float
     )
 
     print("\n Training will run with:")
@@ -343,7 +327,7 @@ def main():
     # --------------------------------
 
     W_final, b_final, losses, history = training_logreg(
-        x_train, y_train, lrate=lrate, iterations=iterations, reg_strength=reg_strength
+        x_train, y_train, lrate, iterations, reg_strength
         )
 
     # pause_for_user("Training finished. Press Enter to see loss curve...")
@@ -382,15 +366,10 @@ def main():
         test1_accuracies.append(np.mean(y_test1_pred_iter == y_test1))
         test2_accuracies.append(np.mean(y_test2_pred_iter == y_test2))
 
-    # smooth
-    train_smoothed = smooth_curve(train_accuracies, window=max(1, iterations//20))
-    test1_smoothed = smooth_curve(test1_accuracies, window=max(1, iterations//20))
-    test2_smoothed = smooth_curve(test2_accuracies, window=max(1, iterations//20))
-
     plt.figure(figsize=(8,5))
-    plt.plot(range(len(losses)), train_smoothed, label="Training Accuracy", color="green")
-    plt.plot(range(len(losses)), test1_smoothed, label="Test Set 1 Accuracy", color="orange")
-    plt.plot(range(len(losses)), test2_smoothed, label="Test Set 2 Accuracy", color="red")
+    plt.plot(range(len(losses)), train_accuracies, label="Training Accuracy", color="green")
+    plt.plot(range(len(losses)), test1_accuracies, label="Test Set 1 Accuracy", color="orange")
+    plt.plot(range(len(losses)), test2_accuracies, label="Test Set 2 Accuracy", color="red")
     plt.xlabel("Iteration")
     plt.ylabel("Accuracy")
     plt.title("Accuracy Curve (Smoothed)")
@@ -418,18 +397,33 @@ def main():
     # 7. evaluate
     # --------------------------------
 
-    print("\nTraining Performance:")
-    print(evaluate_model(y_train, y_train_pred))
+    print("\nTraining finished. Now let's evaluate the model with different thresholds.")
 
-    pause_for_user("Press Enter to see Test Set 1 results...")
+    # Then: interactive loop for manual testing
+    while True:
+        threshold_input = input("\nEnter a threshold between 0 and 1 to evaluate (or press Enter to exit): ")
+        if threshold_input.strip() == "":
+            break  # exit loop
+        try:
+            threshold_value = float(threshold_input)
+            print(f"\nEvaluating with threshold = {threshold_value:.2f}")
 
-    print("\nTest Set 1 Performance:")
-    print(evaluate_model(y_test1, y_test1_pred))
+            # Predictions at chosen threshold
+            y_train_pred = predict(x_train, W_final, b_final, threshold_value)
+            y_test1_pred = predict(x_test1, W_final, b_final, threshold_value)
+            y_test2_pred = predict(x_test2, W_final, b_final, threshold_value)
 
-    pause_for_user("Press Enter to see Test Set 2 results...")
+            print("\nTraining Performance:")
+            evaluate_model(y_train, y_train_pred)
 
-    print("\nTest Set 2 Performance:")
-    print(evaluate_model(y_test2, y_test2_pred))
+            print("\nTest Set 1 Performance:")
+            evaluate_model(y_test1, y_test1_pred)
+
+            print("\nTest Set 2 Performance:")
+            evaluate_model(y_test2, y_test2_pred)
+
+        except ValueError:
+            print("Please enter a number between 0 and 1.")
 
     pause_for_user("\nAll done! Press Enter to exit.")
 
