@@ -351,7 +351,7 @@ def main():
     plt.plot(range(len(losses)), test2_accuracies, label="Test Set 2 Accuracy", color="red")
     plt.xlabel("Iteration")
     plt.ylabel("Accuracy")
-    plt.title("Accuracy Curve (Smoothed)")
+    plt.title("Accuracy Curve")
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
