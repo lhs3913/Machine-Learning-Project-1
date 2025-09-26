@@ -182,7 +182,61 @@ def ask_user_input(prompt, default, cast_type=float):
         return default
     else:
         return cast_type(user_input)
+
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, accuracy_score
+
+def baseline(x_train, y_train, x_test1, y_test1, x_test2, y_test2, threshold):
+    """
+    Baseline model using Linear Regression.
     
+    Parameters:
+        x_train(array): training feature array
+        y_train(array): training output array
+        x_test1(array): 1st test feature array
+        y_test1(array): 1st test output array
+        x_test2(array): 2nd test feature array
+        y_test2(array): 2nd test output array
+        threshold(float): Threshold for converting probabilities into binary predictions
+    Returns:
+        mse: Mean Squared Error
+        acc: accuracy values
+    """
+
+    # Train linear regression
+    linreg = LinearRegression()
+    linreg.fit(x_train, y_train)
+
+    # Predict values
+    y_train_pred = linreg.predict(x_train)
+    y_test1_pred = linreg.predict(x_test1)
+    y_test2_pred = linreg.predict(x_test2)
+
+    # Convert to probabilities with sigmoid
+    y_train_prob = sigmoid(y_train_pred)
+    y_test1_prob = sigmoid(y_test1_pred)
+    y_test2_prob = sigmoid(y_test2_pred)
+
+    # Apply classification threshold
+    y_train_pred = (y_train_prob >= threshold).astype(int)
+    y_test1_pred = (y_test1_prob >= threshold).astype(int)
+    y_test2_pred = (y_test2_prob >= threshold).astype(int)
+
+    # Calculate MSE
+    mse_train = mean_squared_error(y_train, y_train_prob)
+    mse_test1 = mean_squared_error(y_test1, y_test1_prob)
+    mse_test2 = mean_squared_error(y_test2, y_test2_prob)
+
+    # Get accuracy values
+    acc_train = accuracy_score(y_train, y_train_pred)
+    acc_test1 = accuracy_score(y_test1, y_test1_pred)
+    acc_test2 = accuracy_score(y_test2, y_test2_pred)
+
+    mse = {"train": mse_train, "test1": mse_test1, "test2": mse_test2}
+    acc = {"train": acc_train, "test1": acc_test1, "test2": acc_test2}
+    
+    return mse, acc
+
 def main():
     # --------------------------------
     # 1. Ask for parameters
@@ -315,7 +369,7 @@ def main():
     # 5. plot
     # --------------------------------
 
-    # loss curve
+    # loss curve for model
     plt.figure(figsize=(8,5))
     plt.plot(range(len(losses)), losses, label="Training Loss", color="blue")
     plt.xlabel("Iteration")
@@ -327,6 +381,19 @@ def main():
     plt.savefig("graphs/loss_curve.png", dpi=300)
     print("\nLoss curve saved as 'loss_curve.png'.")
     plt.show()
+
+    # mean squared error for baseline (MSE seems to be different from loss in logistic regression so it can't be compared in the
+    # same way)
+    mse, acc = baseline(x_train, y_train, x_test1, y_test1, x_test2, y_test2, threshold)
+    # plt.figure(figsize=(8,5))
+    # plt.plot([mse["train"], mse["train"]], label="Training MSE", color="blue")
+    # plt.xlabel("Iteration")
+    # plt.ylabel("MSE")
+    # plt.title("Baseline MSE")
+    # plt.legend()
+    # plt.grid(True)
+    # plt.tight_layout()
+    # plt.show()
 
     pause_for_user("Loss curve shown. Press Enter to plot accuracy curves...")
 
@@ -358,6 +425,18 @@ def main():
     plt.savefig("graphs/accuracy_curve.png", dpi=300)
     print("Accuracy curve saved as 'accuracy_curve.png'.")
     plt.show()
+    
+    # Accuracy of the baseline
+    plt.plot([acc["train"], acc["train"]], label="Training Accuracy", color="green")
+    plt.plot([acc["test1"], acc["test1"]], label="Test Set 1 Accuracy", color="orange")
+    plt.plot([acc["test2"], acc["test2"]], label="Test Set 2 Accuracy", color="red")
+    plt.xlabel("Iteration")
+    plt.ylabel("Accuracy")
+    plt.title("Baseline Accuracy")
+    plt.legend(loc = (1.05, 0.5))
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
 
     pause_for_user("Accuracy curves shown. Press Enter to run final predictions and evaluations...")
 
@@ -373,6 +452,7 @@ def main():
 
 
     # --------------------------------
+    
     # 7. evaluate
     # --------------------------------
 
